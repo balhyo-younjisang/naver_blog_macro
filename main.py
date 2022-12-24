@@ -14,17 +14,29 @@ root.geometry("900x300")
 root.resizable(False, False)
 
 
+def threading_exit():
+    th = threading.Thread(target=quit_program)
+    th.daemon = True
+    th.start()
+
+
 def threading_init():
     th = threading.Thread(target=init)
     th.daemon = True
     th.start()
 
 
+def quit_program():
+    for proc in psutil.process_iter():
+        if proc.name() == 'Google Chrome':
+            proc.kill()
+    root.destroy()
+
+
 def selenium_driver():
     # options setting and return chrome driver url
     options = webdriver.ChromeOptions()
     options.add_argument("--proxy-server=socks5://127.0.0.1:9150")
-    #options.add_argument("headless")
     options.add_argument('window-size=1920x1080')
     options.add_argument('disable-gpu')
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -36,10 +48,9 @@ def selenium_driver():
 def run():
     # execute tor browser, if running tor browser, kill process
     for proc in psutil.process_iter():
-        if proc.name() == 'firefox.exe':
+        if proc.name() == 'Tor Browser':
             proc.kill()
 
-    # path = os.path.dirname(__file__) + "\\Tor Browser\\Browser\\firefox.exe"
     path = os.getcwd() + "\\Tor Browser\\Browser\\firefox.exe"
 
     os.system('"{0}"'.format(path))
@@ -50,7 +61,7 @@ def run():
     # execute chrome driver
     driver = selenium_driver()
     driver.get(url)
-    time.sleep(3600)
+    time.sleep(600)
     driver.quit()
 
 
@@ -69,5 +80,8 @@ url_entry.pack()
 
 url_input_button = Button(root, text="이 링크로 실행", command=threading_init)
 url_input_button.pack()
+
+exit_button = Button(root, text="종료", command=threading_exit)
+exit_button.pack()
 
 root.mainloop()

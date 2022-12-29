@@ -4,6 +4,9 @@ import threading
 import schedule
 # using selenium for chrome driver control
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import os
 import psutil
 
@@ -30,6 +33,10 @@ def quit_program():
     for proc in psutil.process_iter():
         if proc.name() == 'Google Chrome':
             proc.kill()
+
+    for proc in psutil.process_iter():
+        if proc.name() == 'Tor Browser' or proc.name() == 'firefox.exe':
+            proc.kill()
     root.destroy()
 
 
@@ -41,16 +48,13 @@ def selenium_driver():
     options.add_argument('disable-gpu')
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     # If the Chrome version is low, an error occurs
-    driver_url = webdriver.Chrome('chromedriver.exe', options=options)
+    # driver_url = webdriver.Chrome('chromedriver.exe', options=options)
+    driver_url = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
     return driver_url
 
 
 def run():
-    # execute tor browser, if running tor browser, kill process
-    for proc in psutil.process_iter():
-        if proc.name() == 'Tor Browser':
-            proc.kill()
-
     path = os.getcwd() + "\\Tor Browser\\Browser\\firefox.exe"
 
     os.system('"{0}"'.format(path))
@@ -60,28 +64,34 @@ def run():
     url = str(url_entry.get())
     # execute chrome driver
     driver = selenium_driver()
+    driver.delete_all_cookies()
     driver.get(url)
     time.sleep(600)
     driver.quit()
 
+    for proc in psutil.process_iter():
+        if proc.name() == 'Tor Browser' or proc.name() == 'firefox.exe':
+            proc.kill()
+
 
 def init():
     # every 10 minute, execute run function
+    schedule.every(11).minutes.do(run)
     run()
-    schedule.every(10).minutes.do(run)
 
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
-url_entry = Entry(root)
+url_entry = Entry(root, width=20)
+url_entry.insert(0, "URl 입력")
 url_entry.pack()
 
-url_input_button = Button(root, text="이 링크로 실행", command=threading_init)
+url_input_button = Button(root, text="이 링크로 실행", command=threading_init, width=20, height=2, font=('맑은 고딕', 10, 'bold'), bg='#2F5597', fg='white', )
 url_input_button.pack()
 
-exit_button = Button(root, text="종료", command=threading_exit)
+exit_button = Button(root, text="종료", command=threading_exit, width=20, height=2, font=('맑은 고딕', 10, 'bold'), bg='#2F5597', fg='white')
 exit_button.pack()
 
 root.mainloop()
